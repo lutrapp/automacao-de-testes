@@ -1,0 +1,19 @@
+version: "2"
+services:
+  dev-product-service:
+    build: ../
+    container_name: dev-product-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    expose:
+      - "8102"
+    ports:
+      - "8102:8102"
+    networks:
+      - curso-automacao_app-network
+
+networks:
+  curso-automacao_app-network:
+    external: true

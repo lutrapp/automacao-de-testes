@@ -1,0 +1,19 @@
+version: "2"
+services:
+  test-customer-service:
+    build: ../
+    container_name: test-customer-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - SPRING_PROFILES_ACTIVE=test
+    expose:
+      - "8201"
+    ports:
+      - "8201:8201"
+    networks:
+      - curso-automacao_app-network
+
+networks:
+  curso-automacao_app-network:
+    external: true

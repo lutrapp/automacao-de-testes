@@ -1,0 +1,19 @@
+version: "2"
+services:
+  prod-web-app:
+    build: ../
+    container_name: prod-portal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    expose:
+      - "8305"
+    ports:
+      - "8305:8305"
+    networks:
+      - curso-automacao_app-network      
+      
+networks:
+  curso-automacao_app-network:
+    external: true

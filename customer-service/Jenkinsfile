@@ -1,0 +1,98 @@
+pipeline {
+    agent any
+    tools {
+        maven 'default'
+        dockerTool 'default'
+        allure 'allure'
+    }
+    stages {
+        stage ('Pre-Build Info') {
+            steps {
+            	sh 'mvn --version'
+                sh 'java --version'
+                sh 'docker --version'
+                sh 'docker-compose --version'
+            }
+        }
+        stage ('Build') {
+            steps {                        
+                sh 'cd customer-service && ./mvnw clean package -DskipTests'
+                sleep(time:1,unit:"SECONDS") 
+            }
+        }
+        stage ('Unit Test'){
+            steps {
+                sh 'cd customer-service && ./mvnw test -Dgroups="unit-tests"'
+                sleep(time:1,unit:"SECONDS") 
+            }
+        }
+        stage ('Deploy to Development Environment'){
+            steps {
+                sh 'cd customer-service/docker'
+                sh 'ls -la'
+                sh 'cd customer-service/docker && docker-compose -p curso-automacao -f docker-compose-dev.yml up --build --force-recreate -d dev-customer-service'
+                sleep(time:1,unit:"SECONDS") 
+            }
+        }
+        stage ('Integration Test'){
+            steps {
+                //sh 'cd customer-service && ./mvnw test -Dgroups="integration-tests"'
+                sleep(time:1,unit:"SECONDS") 
+                sh 'cd test-project-bdd-junit4-rest && mvn test -D"cucumber.filter.tags=@customers and @integration-tests" -DtestFailureIgnore=true' 
+            }
+            post {
+          		always {
+            		script {
+              			allure([
+                			includeProperties: false,
+                			jdk: '',
+                			properties: [],
+                			reportBuildPolicy: 'ALWAYS',
+                			results: [[path: 'test-project-bdd-junit4-rest/target/allure-results']]
+						])
+					}
+          		}
+          	}
+        }
+        stage ('Deploy to Test Environment'){
+            steps {
+                sh 'cd customer-service/docker'
+                sh 'ls -la'
+                //sh 'cd customer-service/docker && docker-compose -p curso-automacao -f docker-compose-test.yml up --build --force-recreate -d test-customer-service'
+                //sleep(time:1,unit:"SECONDS") 
+            }
+        }
+        stage ('System and Acceptance Test'){
+            steps {
+                //sh 'cd customer-service && ./mvnw test -Dgroups="system-tests"'
+                sh 'cd test-project-bdd-junit4-web && mvn test -D"cucumber.filter.tags=@customers and @system-tests" -DtestFailureIgnore=true' 
+
+                //sh 'cd customer-service && ./mvnw test -Dgroups="acceptance-tests"'
+                sh 'cd test-project-bdd-junit4-web && mvn test -D"cucumber.filter.tags=@customers and @acceptance-tests" -DtestFailureIgnore=true' 
+
+                sleep(time:1,unit:"SECONDS") 
+            }
+            post {
+          		always {
+            		script {
+              			allure([
+                			includeProperties: false,
+                			jdk: '',
+                			properties: [],
+                			reportBuildPolicy: 'ALWAYS',
+                			results: [[path: 'test-project-bdd-junit4-web/target/allure-results']]
+						])
+					}
+          		}
+          	}
+        }
+        stage ('Deploy to Production Environment'){
+            steps {
+                sh 'cd customer-service/docker'
+                sh 'ls -la'
+                //sh 'cd customer-service/docker && docker-compose -p curso-automacao -f docker-compose-prod.yml up --build --force-recreate -d prod-customer-service'
+                //sleep(time:1,unit:"SECONDS") 
+            }
+        }
+    }   
+}

@@ -1,0 +1,102 @@
+pipeline {
+    agent any
+    tools {
+        maven 'default'
+        dockerTool 'default'
+        allure 'allure'
+    }
+    stages {
+        stage ('Pre-Build Info') {
+            steps {
+            	sh 'mvn --version'
+                sh 'java --version'
+                sh 'docker --version'
+                sh 'docker-compose --version'
+            }
+        }
+        stage ('Build') {
+            steps {                        
+                sh 'cd user-service && ./mvnw clean package -DskipTests'
+                sleep(time:1,unit:"SECONDS") 
+            }
+        }
+        stage ('Unit Test'){
+            steps {
+                sh 'cd user-service && ./mvnw test -Dgroups="unit-tests"'
+                sleep(time:1,unit:"SECONDS") 
+            }
+        }
+        stage ('Deploy to Development Environment'){
+            steps {
+                sh 'cd user-service/docker'
+                sh 'ls -la'
+                sh 'cd user-service/docker && docker-compose -p curso-automacao -f docker-compose-dev.yml up --build --force-recreate -d dev-user-service'
+                sleep(time:1,unit:"SECONDS") 
+            }
+        }
+        stage ('Integration Test'){
+            steps {
+                //sh 'cd user-service && ./mvnw test -Dgroups="integration-tests"'                
+                sh 'cd test-project-bdd-junit4-rest && mvn test -D"cucumber.filter.tags=@auth and @integration-tests" -DtestFailureIgnore=true'             
+                sh 'cd test-project-bdd-junit4-rest && mvn test -D"cucumber.filter.tags=@users and @integration-tests" -DtestFailureIgnore=true' 
+
+                sleep(time:1,unit:"SECONDS") 
+            }	
+            post {
+          		always {
+            		script {
+              			allure([
+                			includeProperties: false,
+                			jdk: '',
+                			properties: [],
+                			reportBuildPolicy: 'ALWAYS',
+                			results: [[path: 'test-project-bdd-junit4-rest/target/allure-results']]
+						])
+					}
+          		}
+          	}
+        }
+        stage ('Deploy to Test Environment'){
+            steps {
+                sh 'cd user-service/docker'
+                sh 'ls -la'
+                //sh 'cd user-service/docker && docker-compose -p curso-automacao -f docker-compose-test.yml up --build --force-recreate -d test-user-service'
+                //sleep(time:1,unit:"SECONDS") 
+            }
+        }  
+        stage ('System and Acceptance Test'){
+            steps {
+                //sh 'cd user-service && ./mvnw test -Dgroups="system-tests"'
+                sh 'cd test-project-bdd-junit4-web && mvn test -D"cucumber.filter.tags=@auth and @system-tests" -DtestFailureIgnore=true' 
+                sh 'cd test-project-bdd-junit4-web && mvn test -D"cucumber.filter.tags=@users and @system-tests" -DtestFailureIgnore=true' 
+
+                //sh 'cd user-service && ./mvnw test -Dgroups="acceptance-tests"'
+                sh 'cd test-project-bdd-junit4-web && mvn test -D"cucumber.filter.tags=@auth and @acceptance-tests" -DtestFailureIgnore=true' 
+                sh 'cd test-project-bdd-junit4-web && mvn test -D"cucumber.filter.tags=@users and @acceptance-tests" -DtestFailureIgnore=true' 
+
+                sleep(time:1,unit:"SECONDS") 
+            }
+            post {
+          		always {
+            		script {
+              			allure([
+                			includeProperties: false,
+                			jdk: '',
+                			properties: [],
+                			reportBuildPolicy: 'ALWAYS',
+                			results: [[path: 'test-project-bdd-junit4-web/target/allure-results']]
+						])
+					}
+          		}
+          	}
+        }
+        stage ('Deploy to Production Environment'){
+            steps {
+                sh 'cd user-service/docker'
+                sh 'ls -la'
+                //sh 'cd user-service/docker && docker-compose -p curso-automacao -f docker-compose-prod.yml up --build --force-recreate -d prod-user-service'
+                //sleep(time:1,unit:"SECONDS") 
+            }
+        }
+    }   
+}

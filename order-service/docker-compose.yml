@@ -1,0 +1,9 @@
+version: "1"
+services:
+  order-service:
+    build: .
+    container_name: order-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    ports:
+      - "8103:8103"

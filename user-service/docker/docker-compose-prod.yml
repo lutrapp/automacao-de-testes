@@ -1,0 +1,19 @@
+version: "2"
+services:
+  prod-user-service:
+    build: ../
+    container_name: prod-user-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    expose:
+      - "8300"
+    ports:
+      - "8300:8300"
+    networks:
+      - curso-automacao_app-network
+
+networks:
+  curso-automacao_app-network:
+    external: true

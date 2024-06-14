@@ -1,0 +1,19 @@
+ # docker-compose.yaml
+version: '3.3'
+services:
+    devops-jenkins:
+        image: jenkins/jenkins:lts-jdk17
+        privileged: true
+        user: root
+        expose:
+            - "8080"
+            - "50000"
+        ports:
+            - "8080:8080"
+            - "50000:50000"
+        container_name: jenkins
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        volumes:
+            - /var/jenkins_home:/var/jenkins_home
+            - /var/run/docker.sock:/var/run/docker.sock

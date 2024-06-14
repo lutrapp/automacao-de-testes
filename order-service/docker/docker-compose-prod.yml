@@ -1,0 +1,19 @@
+version: "2"
+services:
+  prod-order-service:
+    build: ../
+    container_name: prod-order-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    expose:
+      - "8303"
+    ports:
+      - "8303:8303"
+    networks:
+      - curso-automacao_app-network
+
+networks:
+  curso-automacao_app-network:
+    external: true
